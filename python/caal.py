@@ -45,4 +45,15 @@ class caal_electricity(object):
         tmp = self.csvRawData[ip_meter:ip_meter+counts, ip_datetime]
         datetime_list = [Time(i.replace(" ","T")).mjd for i in tmp]
 
+        num_stamp = np.shape(usage_list)[0]
+
+        ## issue of missing data, especially the temperature data
+
+#        for i in np.arange(0,num_stamp):
+#            if (usage_list[i] == self.missval or temp_list[i] == self.missval):
+#                #del usage_list[i], temp_list[i], datetime_list[i]
+#
+#                if (i != 0):
+#                    print self.csvRawData[ip_meter+i, ip_datetime], usage_list[i], temp_list[i]
+#                    print "warning: missing data between data points"
 
