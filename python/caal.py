@@ -26,9 +26,9 @@ class caal_electricity(object):
 
         self.csvRawData = np.array(tmp)[1:]
         self.header = np.array(tmp[0])
-
-    def clean_data(self):
-        print "clean"
+        
+        self.read_bd_id()
+        self.read_meter_id()
 
     def read_bd_id(self):
         ip_bd_id = np.where(self.header == 'BD_ID')[0][0]
@@ -38,6 +38,16 @@ class caal_electricity(object):
     def read_meter_id(self):
         ip_meter_id = np.where(self.header == 'METER_ID')[0][0]
         self.meter_id, self.meter_index, self.meter_counts = np.unique(self.csvRawData[:,ip_meter_id], return_index=True, return_counts=True)
+
+
+    def get_all_bd_data(self):
+        bd_data_all = {}
+        for bd_id in self.bd_id:
+            bd_data = self.get_bd_data(bd_id)
+
+            bd_data_all[bd_id] = bd_data
+
+        return bd_data_all
 
 
     def get_bd_data(self, bd_id):
@@ -74,7 +84,12 @@ class caal_electricity(object):
                     print "time stamps are different between meters within building"+bd_id
                     exit()
 
-        bd_data = {'num_meter':num_meter_bd, 'num_data_point_per_meter':num_data_point}
+            del meter_data
+
+        bd_data = {'num_meter':num_meter_bd, 'num_data_point_per_meter':num_data_point, 'meter_id':bd_meter_id,
+                   'datetime':datetime, 'usage':usage_bd, 'temperature':temp_bd}
+
+        return bd_data
 
 
     ## in this method we collect the meter_id for each bd_id,
@@ -94,6 +109,10 @@ class caal_electricity(object):
         ip_temp  = np.where(self.header == 'TEMPERATURE')[0][0]
         ip_datetime = np.where(self.header == 'DATETIME')[0][0]
 
+        ip_lon = np.where(self.header == 'CLON')[0][0]
+        ip_lat = np.where(self.header == 'CLAT')[0][0]
+        ip_des = np.where(self.header == 'DISCRIPT1')[0][0]
+
         ip_meter = self.meter_index[ip_tmp]
         counts   = self.meter_counts[ip_tmp]
 
@@ -107,9 +126,14 @@ class caal_electricity(object):
         tmp = self.csvRawData[ip_meter:ip_meter+counts, ip_datetime]
         datetime_list = [Time(i.replace(" ","T")).mjd for i in tmp]
 
+        lon = float(self.csvRawData[ip_meter:ip_meter, ip_lon])
+        lat = float(self.csvRawData[ip_meter:ip_meter, ip_lat])
+        des = self.csvRawData[ip_meter:ip_meter, ip_des]
+
         num_stamp = np.shape(usage_list)[0]
 
-        d = {'num_data_point':num_stamp, 'usage':usage_list, 'temperature':temp_list, 'datetime':datetime_list}
+        d = {'num_data_point':num_stamp, 'usage':usage_list, 'temperature':temp_list, 'datetime':datetime_list, 
+             'CLON':lon, 'CLAT':lat, 'DESCRIPT':des}
 
         return d
 
