@@ -40,6 +40,43 @@ class caal_electricity(object):
         self.meter_id, self.meter_index, self.meter_counts = np.unique(self.csvRawData[:,ip_meter_id], return_index=True, return_counts=True)
 
 
+    def get_bd_data(self, bd_id):
+        bd_meter_id = self.get_bd_meter(bd_id)
+        
+        num_meter_bd = np.shape(bd_meter_id)[0]
+
+        for i in np.arange(0,num_meter_bd):
+            meter_data = self.get_meter_data(bd_meter_id[i])
+
+            if i==0:
+                num_data_point = meter_data['num_data_point']
+                usage_bd = np.zeros( (num_data_point, num_meter_bd) )
+                temp_bd  = np.zeros(num_data_point)
+                datetime = np.zeros(num_data_point)
+
+                temp_bd[:] = meter_data['temperature'][:]
+                datetime[:] = meter_data['datetime']
+
+            usage_bd[:,i] = meter_data['usage'][:]
+
+            if i > 0:
+                if (num_data_point != meter_data['num_data_point']):
+                    print "different number of data points between meters within building"+bd_id
+                    exit()
+
+                temp_equal = np.array_equal(temp_bd, np.asarray(meter_data['temperature']))
+                time_equal = np.array_equal(datetime, np.asarray(meter_data['datetime']))
+
+                if (not temp_equal):
+                    print "temperature measures are different between meters within building"+bd_id
+                    exit()
+                if (not time_equal):
+                    print "time stamps are different between meters within building"+bd_id
+                    exit()
+
+        bd_data = {'num_meter':num_meter_bd, 'num_data_point_per_meter':num_data_point}
+
+
     ## in this method we collect the meter_id for each bd_id,
     ## several bd_id have multiple meters in its building
     def get_bd_meter(self, bd_id):
