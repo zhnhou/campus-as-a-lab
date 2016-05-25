@@ -81,8 +81,6 @@ class caal_electricity(object):
                 lat = meter_data['CLAT']
                 descr = meter_data['DESCRIPT']
 
-            usage_bd[:,i] = meter_data['usage'][:]
-
             if i > 0:
                 if (lon != meter_data['CLON'] or lat != meter_data['CLAT']):
                     print "different lon/lat between meters within building "+bd_id
@@ -101,6 +99,8 @@ class caal_electricity(object):
                 if (not time_equal):
                     print "time stamps are different between meters within building "+bd_id
                     exit()
+
+            usage_bd[:,i] = meter_data['usage'][:]
 
             del meter_data
 
@@ -126,6 +126,7 @@ class caal_electricity(object):
     ## the building information such as lon, lat and building name
     ## are also included
     def get_meter_data(self, meter_id):
+        
         ip_tmp = np.where(self.meter_id == meter_id)[0][0]
         ip_usage = np.where(self.header == 'USAGE')[0][0]
         ip_temp  = np.where(self.header == 'TEMPERATURE')[0][0]
@@ -155,6 +156,8 @@ class caal_electricity(object):
         des = self.csvRawData[ip_meter, ip_des]
 
         num_stamp = np.shape(usage_list)[0]
+
+        print "fetched meter "+meter_id+" "+str(num_stamp)+" data points"
 
         d = {'num_data_point':num_stamp, 'usage':usage_list, 'temperature':temp_list, 'datetime':datetime_list, 
              'CLON':lon, 'CLAT':lat, 'DESCRIPT':des, 'num_missval_usage':num_missval_usage, 'num_missval_temp':num_missval_temp}
