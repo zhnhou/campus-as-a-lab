@@ -30,16 +30,19 @@ class caal_electricity(object):
         self.read_bd_id()
         self.read_meter_id()
 
+    ## get all the bd_id in csv file as an array of strings
     def read_bd_id(self):
         ip_bd_id = np.where(self.header == 'BD_ID')[0][0]
         self.bd_id = np.unique(self.csvRawData[:,ip_bd_id])
         self.num_bd = self.bd_id.shape
 
+    ## get all the meter_id in csv file as an array of strings
     def read_meter_id(self):
         ip_meter_id = np.where(self.header == 'METER_ID')[0][0]
         self.meter_id, self.meter_index, self.meter_counts = np.unique(self.csvRawData[:,ip_meter_id], return_index=True, return_counts=True)
 
-
+    ## get all the data points organized within a dictionary with
+    ## bd_id as the keys
     def get_all_bd_data(self):
         bd_data_all = {}
         for bd_id in self.bd_id:
@@ -50,13 +53,20 @@ class caal_electricity(object):
         return bd_data_all
 
 
+    ## get the meter data within one building by given bd_id
     def get_bd_data(self, bd_id):
         bd_meter_id = self.get_bd_meter(bd_id)
         
         num_meter_bd = np.shape(bd_meter_id)[0]
 
+        num_missval_usage = np.zeros(num_meter_bd, dtype=np.int32)
+        num_missval_temp  = np.zeros(num_meter_bd, dtype=np.int32)
+
         for i in np.arange(0,num_meter_bd):
             meter_data = self.get_meter_data(bd_meter_id[i])
+
+            num_missval_usage[i] = meter_data['num_missval_usage']
+            num_missval_temp[i]  = meter_data['num_missval_temp']
 
             if i==0:
                 num_data_point = meter_data['num_data_point']
@@ -67,27 +77,36 @@ class caal_electricity(object):
                 temp_bd[:] = meter_data['temperature'][:]
                 datetime[:] = meter_data['datetime']
 
+                lon = meter_data['CLON']
+                lat = meter_data['CLAT']
+                descr = meter_data['DESCRIPT']
+
             usage_bd[:,i] = meter_data['usage'][:]
 
             if i > 0:
+                if (lon != meter_data['CLON'] or lat != meter_data['CLAT']):
+                    print "different lon/lat between meters within building "+bd_id
+                    exit()
+
                 if (num_data_point != meter_data['num_data_point']):
-                    print "different number of data points between meters within building"+bd_id
+                    print "different number of data points between meters within building "+bd_id
                     exit()
 
                 temp_equal = np.array_equal(temp_bd, np.asarray(meter_data['temperature']))
                 time_equal = np.array_equal(datetime, np.asarray(meter_data['datetime']))
 
                 if (not temp_equal):
-                    print "temperature measures are different between meters within building"+bd_id
+                    print "temperature measures are different between meters within building "+bd_id
                     exit()
                 if (not time_equal):
-                    print "time stamps are different between meters within building"+bd_id
+                    print "time stamps are different between meters within building "+bd_id
                     exit()
 
             del meter_data
 
         bd_data = {'num_meter':num_meter_bd, 'num_data_point_per_meter':num_data_point, 'meter_id':bd_meter_id,
-                   'datetime':datetime, 'usage':usage_bd, 'temperature':temp_bd}
+                   'datetime':datetime, 'usage':usage_bd, 'temperature':temp_bd, 'bd_name':descr, 'CLON':lon, 'CLAT':lat,
+                   'num_missval_usage':num_missval_usage, 'num_missval_temp':num_missval_temp}
 
         return bd_data
 
@@ -102,7 +121,10 @@ class caal_electricity(object):
 
         return meter_bd
 
-
+    ## this method is the core of the class, getting the data points
+    ## of the meter of given meter_id
+    ## the building information such as lon, lat and building name
+    ## are also included
     def get_meter_data(self, meter_id):
         ip_tmp = np.where(self.meter_id == meter_id)[0][0]
         ip_usage = np.where(self.header == 'USAGE')[0][0]
@@ -118,22 +140,24 @@ class caal_electricity(object):
 
         tmp = self.csvRawData[ip_meter:ip_meter+counts, ip_usage]
         usage_list = [float(i) if i != "" else self.missval for i in tmp]
+        num_missval_usage = usage_list.count(self.missval)
 
         tmp = self.csvRawData[ip_meter:ip_meter+counts, ip_temp]
         temp_list = [float(i) if i != "" else self.missval for i in tmp]
+        num_missval_temp = temp_list.count(self.missval)
 
         # here we convert the date time to modified Julian date
         tmp = self.csvRawData[ip_meter:ip_meter+counts, ip_datetime]
         datetime_list = [Time(i.replace(" ","T")).mjd for i in tmp]
 
-        lon = float(self.csvRawData[ip_meter:ip_meter, ip_lon])
-        lat = float(self.csvRawData[ip_meter:ip_meter, ip_lat])
-        des = self.csvRawData[ip_meter:ip_meter, ip_des]
+        lon = self.csvRawData[ip_meter, ip_lon]
+        lat = self.csvRawData[ip_meter, ip_lat]
+        des = self.csvRawData[ip_meter, ip_des]
 
         num_stamp = np.shape(usage_list)[0]
 
         d = {'num_data_point':num_stamp, 'usage':usage_list, 'temperature':temp_list, 'datetime':datetime_list, 
-             'CLON':lon, 'CLAT':lat, 'DESCRIPT':des}
+             'CLON':lon, 'CLAT':lat, 'DESCRIPT':des, 'num_missval_usage':num_missval_usage, 'num_missval_temp':num_missval_temp}
 
         return d
 
