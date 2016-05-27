@@ -176,10 +176,16 @@ class caal_electricity(object):
         delta_t = 0.5/24.00
 
         t_array = np.arange(0,num_stamp) * delta_t + t_first
+        t_diff = meter_data['datetime'] - t_array
 
-        t_diff = abs(meter_data['datetime'] - t_array)
+        for i in np.arange(0, num_stamp):
+            t_diff[i] = round(t_diff[i])
 
-        print max(t_diff)
+        diff = np.unique(t_diff)
+
+
+
+        del t_diff
         
         
         
