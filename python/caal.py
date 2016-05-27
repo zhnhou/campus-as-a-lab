@@ -162,7 +162,24 @@ class caal_electricity(object):
         d = {'num_data_point':num_stamp, 'usage':usage_list, 'temperature':temp_list, 'datetime':datetime_list, 
              'CLON':lon, 'CLAT':lat, 'DESCRIPT':des, 'num_missval_usage':num_missval_usage, 'num_missval_temp':num_missval_temp}
 
+        self.check_time_stamp(d)
+
         return d
 
+    def check_time_stamp(self, meter_data):
 
+        num_stamp = meter_data['num_data_point']
+
+        t_first = meter_data['datetime'][0]
+        t_last  = meter_data['datetime'][num_stamp-1]
+
+        delta_t = 0.5/24.00
+
+        t_array = np.arange(0,num_stamp) * delta_t + t_first
+
+        t_diff = abs(meter_data['datetime'] - t_array)
+
+        print max(t_diff)
+        
+        
         
