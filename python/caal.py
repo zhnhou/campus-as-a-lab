@@ -179,13 +179,16 @@ class caal_electricity(object):
         t_diff = meter_data['datetime'] - t_array
 
         for i in np.arange(0, num_stamp):
-            t_diff[i] = round(t_diff[i])
+            t_diff[i] = round(t_diff[i]/delta_t)
 
-        diff = np.unique(t_diff)
+        diff = [ int(i) for i in np.unique(t_diff)]
 
+        if (np.shape(diff)[0] == 1 and diff[0] == 0):
+            return 0
+        else:
+            print diff
 
-
-        del t_diff
+        
         
         
         
