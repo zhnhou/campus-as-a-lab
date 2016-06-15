@@ -4,6 +4,7 @@ import numpy as np
 import cPickle as pickle
 from astropy.time import Time
 
+# need more comments to explain the codes
 
 __all__ = ['caal_electricity']
 
@@ -186,7 +187,7 @@ class caal_electricity(object):
         if (np.shape(diff)[0] == 1 and diff[0] == 0):
             return 0
         else:
-            print diff
+            return diff
 
         
         
