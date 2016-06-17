@@ -44,8 +44,8 @@ class caal_electricity(object):
 
     ## get all the meter_id in csv file as an array of strings
     def read_meter_id(self):
-        ip_meter_id = np.where(self.header == 'METER_ID')[0][0]
-        self.meter_id, self.meter_index, self.meter_counts = np.unique(self.csvRawData[:,ip_meter_id], return_index=True, return_counts=True)
+#        ip_meter_id = np.where(self.header == 'METER_ID')[0][0]
+        self.meter_id, self.meter_index, self.meter_counts = np.unique(self.csvRawData.METER_ID, return_index=True, return_counts=True)
 
     ## get all the data points organized within a dictionary with
     ## bd_id as the keys
@@ -134,32 +134,30 @@ class caal_electricity(object):
     def get_meter_data(self, meter_id):
         
         ip_tmp = np.where(self.meter_id == meter_id)[0][0]
-        ip_usage = np.where(self.header == 'USAGE')[0][0]
-        ip_temp  = np.where(self.header == 'TEMPERATURE')[0][0]
-        ip_datetime = np.where(self.header == 'DATETIME')[0][0]
+#        ip_usage = np.where(self.header == 'USAGE')[0][0]
+#        ip_temp  = np.where(self.header == 'TEMPERATURE')[0][0]
+#        ip_datetime = np.where(self.header == 'DATETIME')[0][0]
 
-        ip_lon = np.where(self.header == 'CLON')[0][0]
-        ip_lat = np.where(self.header == 'CLAT')[0][0]
-        ip_des = np.where(self.header == 'DISCRIPT1')[0][0]
+#        ip_lon = np.where(self.header == 'CLON')[0][0]
+#        ip_lat = np.where(self.header == 'CLAT')[0][0]
+#        ip_des = np.where(self.header == 'DISCRIPT1')[0][0]
 
         ip_meter = self.meter_index[ip_tmp]
         counts   = self.meter_counts[ip_tmp]
 
-        tmp = self.csvRawData[ip_meter:ip_meter+counts, ip_usage]
-        usage_list = [float(i) if i != "" else self.missval for i in tmp]
-        num_missval_usage = usage_list.count(self.missval)
+        tmp = self.csvRawData.loc[self.csvRawData.METER_ID == meter_id]
+        usage_list = tmp.USAGE
+        num_missval_usage = tmp.isnull().sum().USAGE
 
-        tmp = self.csvRawData[ip_meter:ip_meter+counts, ip_temp]
-        temp_list = [float(i) if i != "" else self.missval for i in tmp]
-        num_missval_temp = temp_list.count(self.missval)
+        temp_list = tmp.TEMPERATURE
+        num_missval_temp = tmp.isnull().sum().TEMPERATURE
 
         # here we convert the date time to modified Julian date
-        tmp = self.csvRawData[ip_meter:ip_meter+counts, ip_datetime]
-        datetime_list = [Time(i.replace(" ","T")).mjd for i in tmp]
+        datetime_list = [Time(i).mjd for i in tmp.DATETIME]
 
-        lon = self.csvRawData[ip_meter, ip_lon]
-        lat = self.csvRawData[ip_meter, ip_lat]
-        des = self.csvRawData[ip_meter, ip_des]
+        lon = tmp.CLON
+        lat = tmp.CLAT
+        des = tmp.DISCRIPT1
 
         num_stamp = np.shape(usage_list)[0]
 
