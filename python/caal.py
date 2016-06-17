@@ -1,5 +1,9 @@
 import os
-import csv
+
+# now we use pandas to read csv file
+#import csv
+import pandas as pd
+
 import numpy as np
 import cPickle as pickle
 from astropy.time import Time
@@ -10,7 +14,7 @@ __all__ = ['caal_electricity']
 
 class caal_electricity(object):
     def __init__(self, electricity_csv_file, cache_file=None):
-        self.missval = long(-1000000)
+#        self.missval = long(-1000000)
 
         if (cache_file is None):
             i = electricity_csv_file.rfind('/')
@@ -21,20 +25,21 @@ class caal_electricity(object):
         else:
             self.cache_file = cache_file
 
-        with open (electricity_csv_file, 'rb') as csvfile:
-            csvReader = csv.reader(csvfile)
-            tmp = list(csvReader)
+#        with open (electricity_csv_file, 'rb') as csvfile:
+#            csvReader = csv.reader(csvfile)
+#            tmp = list(csvReader)
 
-        self.csvRawData = np.array(tmp)[1:]
-        self.header = np.array(tmp[0])
+        self.csvRawData = pd.read_csv(electricity_csv_file, skip_blank_lines=True)
+        self.header = list(self.csvRawData.columns)
         
         self.read_bd_id()
         self.read_meter_id()
 
     ## get all the bd_id in csv file as an array of strings
     def read_bd_id(self):
-        ip_bd_id = np.where(self.header == 'BD_ID')[0][0]
-        self.bd_id = np.unique(self.csvRawData[:,ip_bd_id])
+#        ip_bd_id = np.where(self.header == 'BD_ID')[0][0]
+#        self.bd_id = np.unique(self.csvRawData[:,ip_bd_id])
+        self.bd_id = np.unique(self.csvRawData.BD_ID)
         self.num_bd = self.bd_id.shape
 
     ## get all the meter_id in csv file as an array of strings
