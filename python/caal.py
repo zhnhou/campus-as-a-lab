@@ -45,7 +45,8 @@ class caal_electricity(object):
     ## get all the meter_id in csv file as an array of strings
     def read_meter_id(self):
 #        ip_meter_id = np.where(self.header == 'METER_ID')[0][0]
-        self.meter_id, self.meter_index, self.meter_counts = np.unique(self.csvRawData.METER_ID, return_index=True, return_counts=True)
+#        self.meter_id, self.meter_index, self.meter_counts = np.unique(self.csvRawData.METER_ID, return_index=True, return_counts=True)
+        self.meter_id = np.unique(self.csvRawData.METER_ID)
 
     ## get all the data points organized within a dictionary with
     ## bd_id as the keys
@@ -133,18 +134,6 @@ class caal_electricity(object):
     ## are also included
     def get_meter_data(self, meter_id):
         
-        ip_tmp = np.where(self.meter_id == meter_id)[0][0]
-#        ip_usage = np.where(self.header == 'USAGE')[0][0]
-#        ip_temp  = np.where(self.header == 'TEMPERATURE')[0][0]
-#        ip_datetime = np.where(self.header == 'DATETIME')[0][0]
-
-#        ip_lon = np.where(self.header == 'CLON')[0][0]
-#        ip_lat = np.where(self.header == 'CLAT')[0][0]
-#        ip_des = np.where(self.header == 'DISCRIPT1')[0][0]
-
-        ip_meter = self.meter_index[ip_tmp]
-        counts   = self.meter_counts[ip_tmp]
-
         tmp = self.csvRawData.loc[self.csvRawData.METER_ID == meter_id]
         usage_list = tmp.USAGE
         num_missval_usage = tmp.isnull().sum().USAGE
