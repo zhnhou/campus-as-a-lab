@@ -1,9 +1,5 @@
 import os
-
-# now we use pandas to read csv file
-#import csv
 import pandas as pd
-
 import numpy as np
 import cPickle as pickle
 from astropy.time import Time
@@ -14,7 +10,8 @@ __all__ = ['caal_electricity']
 
 class caal_electricity(object):
     def __init__(self, electricity_csv_file, cache_file=None):
-#        self.missval = long(-1000000)
+
+        self.missval = -1.00E30
 
         if (cache_file is None):
             i = electricity_csv_file.rfind('/')
@@ -25,10 +22,6 @@ class caal_electricity(object):
         else:
             self.cache_file = cache_file
 
-#        with open (electricity_csv_file, 'rb') as csvfile:
-#            csvReader = csv.reader(csvfile)
-#            tmp = list(csvReader)
-
         self.csvRawData = pd.read_csv(electricity_csv_file, skip_blank_lines=True)
         self.header = list(self.csvRawData.columns)
         
@@ -37,15 +30,11 @@ class caal_electricity(object):
 
     ## get all the bd_id in csv file as an array of strings
     def read_bd_id(self):
-#        ip_bd_id = np.where(self.header == 'BD_ID')[0][0]
-#        self.bd_id = np.unique(self.csvRawData[:,ip_bd_id])
         self.bd_id = np.unique(self.csvRawData.BD_ID)
         self.num_bd = self.bd_id.shape
 
     ## get all the meter_id in csv file as an array of strings
     def read_meter_id(self):
-#        ip_meter_id = np.where(self.header == 'METER_ID')[0][0]
-#        self.meter_id, self.meter_index, self.meter_counts = np.unique(self.csvRawData.METER_ID, return_index=True, return_counts=True)
         self.meter_id = np.unique(self.csvRawData.METER_ID)
 
     ## get all the data points organized within a dictionary with
@@ -62,6 +51,8 @@ class caal_electricity(object):
 
     ## get the meter data within one building by given bd_id
     def get_bd_data(self, bd_id):
+
+        print "start reading data from building "+bd_id
         bd_meter_id = self.get_bd_meter(bd_id)
         
         num_meter_bd = np.shape(bd_meter_id)[0]
@@ -133,24 +124,30 @@ class caal_electricity(object):
     ## the building information such as lon, lat and building name
     ## are also included
     def get_meter_data(self, meter_id):
+
+        print "    start reading Meter data - "+meter_id
         
         tmp = self.csvRawData.loc[self.csvRawData.METER_ID == meter_id]
-        usage_list = tmp.USAGE
+        usage_list = tmp.USAGE.values
         num_missval_usage = tmp.isnull().sum().USAGE
+        usage_list[np.isnan(usage_list)] = self.missval
 
-        temp_list = tmp.TEMPERATURE
+        temp_list = tmp.TEMPERATURE.values
         num_missval_temp = tmp.isnull().sum().TEMPERATURE
+        temp_list[np.isnan(temp_list)] = self.missval
 
         # here we convert the date time to modified Julian date
-        datetime_list = [Time(i).mjd for i in tmp.DATETIME]
+        datetime_list = np.asarray([Time(i).mjd for i in tmp.DATETIME])
 
-        lon = tmp.CLON
-        lat = tmp.CLAT
-        des = tmp.DISCRIPT1
+        ## here lon, lat, and des are scalars
+        lon = tmp.CLON.iloc[0]
+        lat = tmp.CLAT.iloc[0]
+        des = tmp.DISCRIPT1.iloc[0]
 
-        num_stamp = np.shape(usage_list)[0]
+        num_stamp = usage_list.shape[0]
 
-        print "fetched meter "+meter_id+" "+str(num_stamp)+" data points"
+        print "    fetched meter "+meter_id+" "+str(num_stamp)+" data points"
+        print " "
 
         d = {'num_data_point':num_stamp, 'usage':usage_list, 'temperature':temp_list, 'datetime':datetime_list, 
              'CLON':lon, 'CLAT':lat, 'DESCRIPT':des, 'num_missval_usage':num_missval_usage, 'num_missval_temp':num_missval_temp}
