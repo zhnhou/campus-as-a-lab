@@ -28,6 +28,20 @@ class caal_electricity(object):
         self.read_bd_id()
         self.read_meter_id()
 
+        start_ = []
+        end_ = []
+
+        for meter_id in self.meter_id:
+            start, end = self.get_meter_startend(meter_id)
+            start_.append(start)
+            end_.append(end)
+
+        self.start_date = min(start_)
+        self.end_date   = max(end_)
+
+        self.delta_t = 0.50e0/24.00e0
+        self.num_data_point = int((self.end_date - self.start_date)/self.delta_t + 1)
+
     ## get all the bd_id in csv file as an array of strings
     def read_bd_id(self):
         self.bd_id = np.unique(self.csvRawData.BD_ID)
@@ -120,15 +134,15 @@ class caal_electricity(object):
         return meter_bd
 
     ## This method will take a glance of the size of the meter data
-    def get_meter_info(self, meter_id):
+    def get_meter_startend(self, meter_id):
 
         tmp = self.csvRawData.loc[self.csvRawData.METER_ID == meter_id]
         start_date = Time(tmp.DATETIME.iloc[0]).mjd
         end_date = Time(tmp.DATETIME.iloc[-1]).mjd
 
-        print meter_id, tmp.DATETIME.iloc[0], tmp.DATETIME.iloc[-1]
-#print start_date, end_date
-
+        print end_date
+        
+        return start_date, end_date
 
     ## this method is the core of the class, getting the data points
     ## of the meter of given meter_id
