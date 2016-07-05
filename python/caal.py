@@ -119,6 +119,17 @@ class caal_electricity(object):
 
         return meter_bd
 
+    ## This method will take a glance of the size of the meter data
+    def get_meter_info(self, meter_id):
+
+        tmp = self.csvRawData.loc[self.csvRawData.METER_ID == meter_id]
+        start_date = Time(tmp.DATETIME.iloc[0]).mjd
+        end_date = Time(tmp.DATETIME.iloc[-1]).mjd
+
+        print meter_id, tmp.DATETIME.iloc[0], tmp.DATETIME.iloc[-1]
+#print start_date, end_date
+
+
     ## this method is the core of the class, getting the data points
     ## of the meter of given meter_id
     ## the building information such as lon, lat and building name
@@ -128,28 +139,30 @@ class caal_electricity(object):
         print "    start reading Meter data - "+meter_id
         
         tmp = self.csvRawData.loc[self.csvRawData.METER_ID == meter_id]
-        usage_list = tmp.USAGE.values
+        usage_array= tmp.USAGE.values
         num_missval_usage = tmp.isnull().sum().USAGE
-        usage_list[np.isnan(usage_list)] = self.missval
+        usage_array[np.isnan(usage_list)] = self.missval
 
-        temp_list = tmp.TEMPERATURE.values
+        temp_array = tmp.TEMPERATURE.values
         num_missval_temp = tmp.isnull().sum().TEMPERATURE
-        temp_list[np.isnan(temp_list)] = self.missval
+        temp_array[np.isnan(temp_list)] = self.missval
 
         # here we convert the date time to modified Julian date
-        datetime_list = np.asarray([Time(i).mjd for i in tmp.DATETIME])
+        datetime_array = np.asarray([Time(i).mjd for i in tmp.DATETIME])
 
         ## here lon, lat, and des are scalars
         lon = tmp.CLON.iloc[0]
         lat = tmp.CLAT.iloc[0]
         des = tmp.DISCRIPT1.iloc[0]
 
-        num_stamp = usage_list.shape[0]
+        num_stamp = usage_array.shape[0]
+
+        del tmp
 
         print "    fetched meter "+meter_id+" "+str(num_stamp)+" data points"
         print " "
 
-        d = {'num_data_point':num_stamp, 'usage':usage_list, 'temperature':temp_list, 'datetime':datetime_list, 
+        d = {'num_data_point':num_stamp, 'usage':usage_array, 'temperature':temp_array, 'datetime':datetime_array, 
              'CLON':lon, 'CLAT':lat, 'DESCRIPT':des, 'num_missval_usage':num_missval_usage, 'num_missval_temp':num_missval_temp}
 
         self.check_time_stamp(d)
