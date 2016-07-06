@@ -84,8 +84,8 @@ class caal_electricity(object):
             if i==0:
                 num_data_point = meter_data['num_data_point']
                 usage_bd = np.zeros( (num_data_point, num_meter_bd) )
-                temp_bd  = np.zeros(num_data_point)
-                datetime = np.zeros(num_data_point)
+                temp_bd  = np.zeros( num_data_point )
+                datetime = np.zeros( num_data_point )
 
                 temp_bd[:] = meter_data['temperature'][:]
                 datetime[:] = meter_data['datetime']
@@ -152,18 +152,19 @@ class caal_electricity(object):
         print "    start reading Meter data - "+meter_id
 
         usage_array = np.zeros(self.num_data_point)
+        temp_array = np.zeros(self.num_data_point)
         
         tmp = self.csvRawData.loc[self.csvRawData.METER_ID == meter_id]
         usage_tmp = tmp.USAGE.values
         num_missval_usage = tmp.isnull().sum().USAGE
         usage_tmp[np.isnan(usage_tmp)] = self.missval
 
-        temp_array = tmp.TEMPERATURE.values
+        temp_tmp = tmp.TEMPERATURE.values
         num_missval_temp = tmp.isnull().sum().TEMPERATURE
-        temp_array[np.isnan(temp_array)] = self.missval
+        temp_tmp[np.isnan(temp_tmp)] = self.missval
 
-        # here we convert the date time to modified Julian date
-        datetime_array = np.asarray([Time(i).mjd for i in tmp.DATETIME])
+        ## here we convert the date time to modified Julian date
+        #datetime_array = np.asarray([Time(i).mjd for i in tmp.DATETIME])
 
         ## here lon, lat, and des are scalars
         lon = tmp.CLON.iloc[0]
@@ -174,13 +175,14 @@ class caal_electricity(object):
 
         idx_mismatch = self.check_time_stamp(datetime_array)
         usage_array[idx_mismatch] = usage_tmp
+        temp_array[idx_mismatch] = temp_tmp
 
         del tmp, usage_tmp
 
         print "    fetched meter "+meter_id+" "+str(num_stamp)+" time stamps / "+str(self.num_data_point)+" data points"
         print " "
 
-        d = {'num_data_point':num_stamp, 'usage':usage_array, 'temperature':temp_array, 'datetime':datetime_array, 
+        d = {'num_data_point':num_stamp, 'usage':usage_array, 'temperature':temp_array,
              'CLON':lon, 'CLAT':lat, 'DESCRIPT':des, 'num_missval_usage':num_missval_usage, 'num_missval_temp':num_missval_temp}
 
         return d
@@ -195,9 +197,4 @@ class caal_electricity(object):
 
         idx_mismatch = np.rint(t_diff/self.delta_t) + round((t_first - self.start_date) / self.delta_t) + np.arange(0,num_stamp)
 
-        return idx_mismatch.astype(int)
-
-        
-        
-        
-        
+        return idx_mismatch.astype(int) 
