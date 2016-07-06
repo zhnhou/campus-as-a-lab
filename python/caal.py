@@ -41,6 +41,7 @@ class caal_electricity(object):
 
         self.delta_t = 0.50e0/24.00e0
         self.num_data_point = int((self.end_date - self.start_date)/self.delta_t + 1)
+        self.datetime = np.arange(self.num_data_point) * self.delta_t + self.start_date
 
     ## get all the bd_id in csv file as an array of strings
     def read_bd_id(self):
@@ -140,8 +141,6 @@ class caal_electricity(object):
         start_date = Time(tmp.DATETIME.iloc[0]).mjd
         end_date = Time(tmp.DATETIME.iloc[-1]).mjd
 
-        print end_date
-        
         return start_date, end_date
 
     ## this method is the core of the class, getting the data points
@@ -151,15 +150,17 @@ class caal_electricity(object):
     def get_meter_data(self, meter_id):
 
         print "    start reading Meter data - "+meter_id
+
+        usage_array = np.zeros(self.num_data_point)
         
         tmp = self.csvRawData.loc[self.csvRawData.METER_ID == meter_id]
-        usage_array= tmp.USAGE.values
+        usage_tmp = tmp.USAGE.values
         num_missval_usage = tmp.isnull().sum().USAGE
-        usage_array[np.isnan(usage_list)] = self.missval
+        usage_tmp[np.isnan(usage_tmp)] = self.missval
 
         temp_array = tmp.TEMPERATURE.values
         num_missval_temp = tmp.isnull().sum().TEMPERATURE
-        temp_array[np.isnan(temp_list)] = self.missval
+        temp_array[np.isnan(temp_array)] = self.missval
 
         # here we convert the date time to modified Julian date
         datetime_array = np.asarray([Time(i).mjd for i in tmp.DATETIME])
@@ -169,41 +170,32 @@ class caal_electricity(object):
         lat = tmp.CLAT.iloc[0]
         des = tmp.DISCRIPT1.iloc[0]
 
-        num_stamp = usage_array.shape[0]
+        num_stamp = usage_tmp.shape[0]
 
-        del tmp
+        idx_mismatch = self.check_time_stamp(datetime_array)
+        usage_array[idx_mismatch] = usage_tmp
 
-        print "    fetched meter "+meter_id+" "+str(num_stamp)+" data points"
+        del tmp, usage_tmp
+
+        print "    fetched meter "+meter_id+" "+str(num_stamp)+" time stamps / "+str(self.num_data_point)+" data points"
         print " "
 
         d = {'num_data_point':num_stamp, 'usage':usage_array, 'temperature':temp_array, 'datetime':datetime_array, 
              'CLON':lon, 'CLAT':lat, 'DESCRIPT':des, 'num_missval_usage':num_missval_usage, 'num_missval_temp':num_missval_temp}
 
-        self.check_time_stamp(d)
-
         return d
 
-    def check_time_stamp(self, meter_data):
+    def check_time_stamp(self, datetime):
 
-        num_stamp = meter_data['num_data_point']
+        t_first, t_last = datetime[0], datetime[-1]
 
-        t_first = meter_data['datetime'][0]
-        t_last  = meter_data['datetime'][num_stamp-1]
+        num_stamp = datetime.shape[0]
+        t_array = np.arange(0,num_stamp) * self.delta_t + t_first
+        t_diff = datetime - t_array
 
-        delta_t = 0.5/24.00
+        idx_mismatch = np.rint(t_diff/self.delta_t) + round((t_first - self.start_date) / self.delta_t) + np.arange(0,num_stamp)
 
-        t_array = np.arange(0,num_stamp) * delta_t + t_first
-        t_diff = meter_data['datetime'] - t_array
-
-        for i in np.arange(0, num_stamp):
-            t_diff[i] = round(t_diff[i]/delta_t)
-
-        diff = [ int(i) for i in np.unique(t_diff)]
-
-        if (np.shape(diff)[0] == 1 and diff[0] == 0):
-            return 0
-        else:
-            return diff
+        return idx_mismatch.astype(int)
 
         
         
